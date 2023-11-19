@@ -2,63 +2,50 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
-
 using namespace std;
-
 class LinkedList {
 private:
     struct NhanVien {
-        string ma, ten, ngaysinh;
-        float luongCoBan, phucap;
+        string mNV, ten, ngaysinh;
+        double luongCoBan, phucap, luongThucLinh; 
         NhanVien* next;
-
         void in();
         void nhap();
-        void tinhLuongThucLinh();
     };
-
     NhanVien* head;
 public:
     LinkedList() : head(NULL) {}
     ~LinkedList();
-
     void themNhanVien();
-    void xoaNhanVien(string ma);
+    void xoaNhanVien(string mNV);
     void inds();
-    NhanVien* timNhanVienTheoMa(string ma);
+    NhanVien* timNhanVienTheoMa(string mNV);
     void timNhanVien();
-    void timNhanVienTheoTen(string ten);
-    void sapXep(bool byMa);
-    void suaThongTinNhanVien(string ma);
-    void tinhLuong();
+    void sapXep();
+    void suaThongTinNhanVien(string mNV);
 };
-
 void LinkedList::NhanVien::in() {
     cout << "-----------------------------------------\n";
-    cout << "Ma nhan vien :" << ma << endl;
+    cout << "Ma nhan vien :" << mNV << endl;
     cout << "Ten nhan vien :" << ten << endl;
     cout << "Ngay sinh :" << ngaysinh << endl;
     cout << "Luong Co ban  :" <<luongCoBan << endl;
-    cout << "Phu cap  :" <<phucap << endl;
+    cout << "Phu cap :"<<  phucap << endl; 
     cout << "------------------------------------------\n";
 }
-
 void LinkedList::NhanVien::nhap() {
     cout << "Nhap ma nhan vien : ";
     cin.ignore();
-    getline(cin, ma);
+    getline(cin, mNV);
     cout << "Nhap ten nhan vien : ";
     getline(cin, ten);
     cout << "Nhap ngay thang nam sinh : ";
     getline(cin, ngaysinh);
     cout << "Nhap luong co ban : ";
     cin>>luongCoBan;
-    cout << "Nhap phu cap : ";
-    cin>>phucap;
-}
-void LinkedList::NhanVien::tinhLuongThucLinh() {
-    float luongThucLinh = phucap +luongCoBan;
-    cout << "Luong thuc linh: " << luongThucLinh << endl;
+    cout<< "Nhap phu cap: ";
+	cin>>phucap;
+	luongThucLinh = luongCoBan+phucap;
 }
 LinkedList::~LinkedList() {
     while (head != NULL) {
@@ -70,44 +57,40 @@ LinkedList::~LinkedList() {
 void LinkedList::themNhanVien() {
     NhanVien* newEmployee = new NhanVien;
     newEmployee->nhap();
-    while (timNhanVienTheoMa(newEmployee->ma) != NULL) {
+    while (timNhanVienTheoMa(newEmployee->mNV) != NULL) {
         cout << "Ma nhan vien da ton tai. Vui long nhap lai: ";
         cin.ignore();
-        getline(cin, newEmployee->ma);
+        getline(cin, newEmployee->mNV);
     }
     newEmployee->next = head;
     head = newEmployee;
 }
-
-void LinkedList::xoaNhanVien(string ma) {
+void LinkedList::xoaNhanVien(string mNV) {
     if (head == NULL) {
         cout << "Danh sach rong. Khong the xoa.\n";
         return;
     }
-
-    if (head->ma == ma) {
+    if (head->mNV == mNV) {
         NhanVien* newHead = head->next;
         delete head;
         head = newHead;
-        cout << "Da xoa nhan vien co ma " << ma << "\n";
+        cout << "Da xoa nhan vien co ma " << mNV << endl;
         return;
     }
-
     NhanVien* current = head;
-    while (current->next != NULL && current->next->ma != ma) {
+    while (current->next != NULL && current->next->mNV != mNV) {
         current = current->next;
     }
-
     if (current->next != NULL) {
         NhanVien* temp = current->next;
         current->next = current->next->next;
         delete temp;
-        cout << "Da xoa nhan vien co ma " << ma << "\n";
-    } else {
-        cout << "Khong tim thay nhan vien co ma " << ma << "\n";
-    }
+        cout << "Da xoa nhan vien co ma " << mNV << endl;
+    } 
+	else {
+    	 cout << "Khong tim thay nhan vien co ma " << mNV << endl;
+        }
 }
-
 void LinkedList::inds() {
     NhanVien* current = head;
     while (current != NULL) {
@@ -115,44 +98,31 @@ void LinkedList::inds() {
         current = current->next;
     }
 }
-
-LinkedList::NhanVien* LinkedList::timNhanVienTheoMa(string ma) {
+LinkedList::NhanVien* LinkedList::timNhanVienTheoMa(string mNV) {
     NhanVien* current = head;
     while (current != NULL) {
-        if (current->ma == ma) {
-            current->in();
+        if (current->mNV == mNV) {
             return current;
         }
         current = current->next;
     }
-    cout << "Khong tim thay nhan vien co ma " << ma << "\n";
     return NULL;
 }
-
 void LinkedList::timNhanVien() {
     cout << "Chon phuong thuc tim kiem:\n";
     cout << "1. Theo ma nhan vien\n";
-    cout << "2. Theo ten nhan vien\n";
     cout << "0. Tro ve menu chinh\n";
-
     int choice;
     cin >> choice;
-
     switch (choice) {
         case 1: {
-            string ma;
+            string mNV;
             cout << "Nhap ma nhan vien can tim : ";
             cin.ignore();
-            getline(cin, ma);
-            timNhanVienTheoMa(ma);
-            break;
-        }
-        case 2: {
-            string ten;
-            cout << "Nhap ten nhan vien can tim : ";
-            cin.ignore();
-            getline(cin, ten);
-            timNhanVienTheoTen(ten);
+            getline(cin, mNV);
+            if (timNhanVienTheoMa(mNV)== NULL)
+            cout << "Khong tim thay nhan vien co ma: "<<mNV<<endl;
+            else timNhanVienTheoMa(mNV)->in();
             break;
         }
         case 0:
@@ -161,85 +131,62 @@ void LinkedList::timNhanVien() {
             cout << "Lua chon khong hop le. Vui long nhap lai.\n";
     }
 }
-
-void LinkedList::timNhanVienTheoTen(string ten) {
-    NhanVien* current = head;
-    bool found = false;
-    while (current != NULL) {
-        if (current->ten.find(ten) != string::npos) {
-            current->in();
-            found = true;
-        }
-        current = current->next;
-    }
-    if (!found)
-        cout << "Khong tim thay nhan vien co ten '" << ten << "'\n";
-}
-
-void LinkedList::sapXep(bool byMa) {
+void LinkedList::sapXep() {
     NhanVien* current = head;
     NhanVien* nextNhanVien;
-    string temp;
-
     while (current != NULL) {
         nextNhanVien = current->next;
-
         while (nextNhanVien != NULL) {
-            if (current->ma > nextNhanVien->ma) {
-                temp =current->ma;
-                if(byMa){
-                    current->ma = nextNhanVien->ma;
-                }else{
-                    nextNhanVien->ma = temp;
+            if (current->mNV.compare(nextNhanVien->mNV) > 0) {
+                swap(current->mNV, nextNhanVien->mNV);
+                swap(current->ten, nextNhanVien->ten);
+                swap(current->ngaysinh, nextNhanVien->ngaysinh);
+                swap(current->luongCoBan, nextNhanVien->luongCoBan);
+                swap(current->phucap, nextNhanVien->phucap);
+                swap(current->luongThucLinh, nextNhanVien->luongThucLinh);
             }
             nextNhanVien = nextNhanVien->next;
         }
         current = current->next;
     }
-
-    cout << "Danh sach nhan vien sau khi sap xep theo " << ("ma") << ":\n";
+    cout << "Danh sach nhan vien sau khi sap xep theo ma nv: " << "\n";
     inds();
 }
-}
-
 void LinkedList::suaThongTinNhanVien(string criteria) {
-    NhanVien* current = head;
-
     cout << "Chon tieu chi sua thong tin:\n";
     cout << "1. Theo ma nhan vien\n";
     cout << "2. Theo ten nhan vien\n";
     cout << "3. Theo luong co ban \n";
     cout << "4. Theo ngay thang nam sinh\n";
+    cout << "5. Theo phu cap \n"; 
     cout << "0. Tro ve menu chinh\n";
-
     int choice;
     cin >> choice;
-
-    while (current != NULL) {
-        bool found = false;
-
+    NhanVien*current= timNhanVienTheoMa(criteria);
         switch (choice) {
             case 1:
-                if (current->ma == criteria) {
-                    found = true;
-                }
+                cout << "Nhap ma nhan vien moi: ";
+                cin.ignore();
+                getline(cin, current->mNV);
                 break;
             case 2:
-                if (current->ten == criteria) {
-                    found = true;
-                }
+                cout << "Nhap ten moi: ";
+				cin.ignore();
+				getline(cin, current->ten);               
                 break;
             case 3:
-                cout << "Nhap luong theo gio moi: ";
+                cout << "Nhap luong co ban moi: ";
                 cin >> current->luongCoBan;
-                found = true;
                 break;
             case 4:
                 cout << "Nhap ngay thang nam sinh moi: ";
                 cin.ignore();
                 getline(cin, current->ngaysinh);
-                found = true;
                 break;
+            case 5:
+			    cout << "Nhap phu cap moi: ";
+				cin >> current->phucap;
+				break; 
             case 0:
                 return;
             default:
@@ -247,38 +194,9 @@ void LinkedList::suaThongTinNhanVien(string criteria) {
                 return;
         }
 
-        if (found) {
-            cout << "Nhap thong tin moi cho nhan vien:\n";
-            cout << "-----------------------------------------\n";
-            cout << "Ma nhan vien cu: " << current->ma << endl;
-            cout << "Ten nhan vien cu: " << current->ten << endl;
-            cout << "Ngay sinh cu: " << current->ngaysinh << endl;
-            cout << "Luong co ban cu: " << current->luongCoBan << endl;
-            cout << "Phu cap cu :" << current->phucap << endl;
-            cout << "------------------------------------------\n";
-            
-            current->nhap();
-            cout << "Da sua thong tin nhan vien.\n";
-            return;
-        }
-
-        current = current->next;
-    }
-
-    cout << "Khong tim thay nhan vien theo tieu chi da chon.\n";
 }
-
-void LinkedList::tinhLuong() {
-    NhanVien* current = head;
-    while (current != NULL) {
-        current->tinhLuongThucLinh();
-        current = current->next;
-    }
-}
-
 int main() {
     LinkedList danhSachNhanVien;
-
     while (1) {
         cout << "---------------MENU---------------\n";
         cout << "1. Nhap thong tin nhan vien\n";
@@ -286,14 +204,11 @@ int main() {
         cout << "3. Tim kiem nhan vien\n";
         cout << "4. Sap xep nhan vien\n";
         cout << "5. Sua thong tin nhan vien\n";
-        cout << "6. Tinh luong thuc linh\n";
         cout << "0. Thoat !\n";
         cout << "------------------------------------\n";
         cout << "Nhap lua chon: ";
-
         int lc;
         cin >> lc;
-
         switch (lc) {
             case 1:
                 danhSachNhanVien.themNhanVien();
@@ -304,28 +219,36 @@ int main() {
             case 3:
                 danhSachNhanVien.timNhanVien();
                 break;
-            case 4:
-                danhSachNhanVien.sapXep(true);
-                break;	
-            case 5: {
-                string ma;
-                cout << "Nhap ma nhan vien can sua thong tin: ";
-                cin.ignore();
-                getline(cin, ma);
-                danhSachNhanVien.suaThongTinNhanVien(ma);
+            case 4: {
+                cout << "Chon tieu chi sap xep:\n";
+                cout << "1. Theo ma\n";
+                cout << "0. Tro ve menu chinh\n";
+                int choice;
+                cin >> choice;
+                switch (choice) {
+                    case 1:
+                        danhSachNhanVien.sapXep();
+                        break;
+                    case 0:
+                        break;
+                    default:
+                        cout << "Lua chon khong hop le. Vui long nhap lai.\n";
+                }
                 break;
             }
-            case 6:
-                danhSachNhanVien.tinhLuong();
+            case 5: {
+                string mNV;
+                cout << "Nhap ma nhan vien can sua thong tin: ";
+                cin.ignore();
+                getline(cin, mNV);
+                danhSachNhanVien.suaThongTinNhanVien(mNV);
                 break;
+            }
             case 0:
                 return 0;
             default:
                 cout << "Lua chon khong hop le. Vui long nhap lai.\n";
         }
     }
-
     return 0;
-
 }
-
