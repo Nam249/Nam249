@@ -1,0 +1,293 @@
+#include <xc.h>
+#include <stdint.h>
+#include "LCD_Lib.c" // Bao g?m th? vi?n LCD
+#include "keypad.h"
+#pragma warning disable 520
+
+#define _XTAL_FREQ    4000000
+
+#pragma config FOSC = HS        // Oscillator Selection bits (HS oscillator)
+#pragma config WDTE = OFF       // Watchdog Timer Enable bit (WDT disabled)
+#pragma config PWRTE = OFF      // Power-up Timer Enable bit (PWRT disabled)
+#pragma config BOREN = ON       // Brown-out Reset Enable bit (BOR enabled)
+#pragma config LVP = OFF        // Low-Voltage (Single-Supply) In-Circuit Serial Programming Enable bit (RB3 is digital I/O, HV on MCLR must be used for programming)
+#pragma config CPD = OFF        // Data EEPROM Memory Code Protection bit (Data EEPROM code protection off)
+#pragma config WRT = OFF        // Flash Program Memory Write Enable bits (Write protection off; all program memory may be written to by EECON control)
+#pragma config CP = OFF         // Flash Program Memory Code Protection bit (Code protection off)
+
+#define LCD_PORT      PORTD  // Màn hình LCD ???c k?t n?i v?i PORTD
+#define Speaker PORTCbits.RC0=0
+
+// Bi?n toàn c?c
+char password[] = "0000"; // M?t kh?u m?c ??nh
+char input[5]; // M?ng l?u tr? giá tr? ??u vào t? bàn phím
+int incorrectAttempts = 0; // S? l?n nh?p m?t kh?u sai
+
+// Khai báo nguyên m?u hàm
+void keypad_init();
+unsigned char docphimmatran();
+void delay_ms(unsigned int milliseconds);
+int custom_strcmp(const char *str1, const char *str2);
+char GetKey(void);
+void savePassword(const char *newPassword);
+void buzzer_sound();
+
+void keypad_init() {
+    Keypad_PORT     = 0x00; // Set các chân c?a bàn phím v? 0
+    Keypad_PORT_Dir = 0xF0; // 4 chân cu?i là input, 4 chân ??u tiên là output
+    OPTION_REG &= 0x7F;
+}
+
+unsigned char docphimmatran(){
+ RowA = 0; RowB = 1; RowC = 1; RowD = 1;  // Ki?m tra hàng A
+
+    if (C1 == 0) {
+        __delay_ms(10);
+        while (C1==0);
+        return '1'; }
+    if (C2 == 0) { 
+        __delay_ms(10);
+        while (C2==0);
+        return '2'; }
+    if (C3 == 0) { 
+        __delay_ms(10);
+        while (C3==0);
+        return '3'; }
+    if (C4 == 0) { 
+        __delay_ms(10);
+        while (C4==0);
+        return 'A'; }
+
+    RowA = 1; RowB = 0; RowC = 1; RowD = 1;  // Ki?m tra hàng B
+
+    if (C1 == 0) {
+        __delay_ms(10);
+        while (C1==0);
+        return '4'; }
+    if (C2 == 0) {
+        __delay_ms(10);
+        while (C2==0);
+        return '5'; }
+    if (C3 == 0) {
+        __delay_ms(10); 
+        while (C3==0);
+        return '6'; }
+    if (C4 == 0) {
+        __delay_ms(10);
+        while (C4==0);
+        return 'B'; }
+
+    RowA = 1; RowB = 1; RowC = 0; RowD = 1;  // Ki?m tra hàng C
+
+    if (C1 == 0) { 
+        __delay_ms(10);
+        while (C1==0);
+        return '7'; }
+    if (C2 == 0) { 
+        __delay_ms(10); 
+        while (C2==0);
+        return '8'; }
+    if (C3 == 0) {
+        __delay_ms(10);
+        while (C3==0); 
+        return '9'; }
+    if (C4 == 0) { 
+        __delay_ms(10);
+        while (C4==0); 
+        return 'C'; }
+
+    RowA = 1; RowB = 1; RowC = 1; RowD = 0;  // Ki?m tra hàng D
+
+    if (C1 == 0) { 
+        __delay_ms(10);
+        while (C1==0);
+        return '*'; }
+    if (C2 == 0) {
+        __delay_ms(10);
+        while (C2==0);
+        return '0'; }
+    if (C3 == 0) { 
+        __delay_ms(10);
+        while (C3==0);
+        return '#'; }
+    if (C4 == 0) {
+        __delay_ms(10);
+        while (C4==0);
+        return 'D'; 
+    }
+    return 'n';     
+}
+
+char GetKey(void) {
+    char key = 'n';       // Gi? giá tr? không có nút nào ???c nh?n
+
+    while (key == 'n')    // Ch? ch? ??n khi có m?t nút ???c nh?n
+        key = docphimmatran(); // Quét l?i các nút m?t l?n n?a
+
+    return key;           // Khi có nút ???c nh?n thì tr? v? giá tr? c?a nút ?ó
+}
+
+void savePassword(const char *newPassword) {
+    for (int i = 0; i < 4; i++) {
+        password[i] = newPassword[i];
+    }
+}
+
+void buzzer_sound() {
+    RC0 = 1;
+    __delay_ms(2000);
+    RC0 = 0;
+}
+
+void main() {
+    TRISD = 0x00;
+    PORTD = 0;
+    TRISC = 0b00000000; // Port C0 k?t n?i v?i loa
+    PORTC = 0x00;
+    LCD_Begin();
+    LCD_Cmd(LCD_CLEAR);
+    LCD_Goto(3,1);
+    LCD_Print("Bai tap lon");
+    LCD_Goto(2,2);
+    LCD_Print("Khoa dien tu");
+    __delay_ms(2000);
+    LCD_Cmd(LCD_CLEAR);
+    
+    LCD_Cmd(0x80);
+    LCD_Print("A: Nhap mat khau");
+    LCD_Cmd(0xC0);
+    LCD_Print("B: Doi mat khau");
+
+    char Key = ' ';   // Bi?n l?u giá tr? c?a nút ???c nh?n
+    keypad_init();   // Kh?i t?o các chân c?a bàn phím
+
+    while(1) {
+        Key = GetKey();   // L?y giá tr? c?a nút ???c nh?n t? bàn phím
+
+        if(Key == 'A') { // N?u nh?n nút A, nh?p m?t kh?u
+            LCD_Cmd(0x01); // Xóa màn hình
+            LCD_Cmd(0x80);
+            LCD_Print("NHAP MAT KHAU");
+
+            // Nh?p m?t kh?u
+            for(int i = 0; i < 4; i++) {
+                input[i] = GetKey();
+                LCD_Goto(i+1, 2); // Di chuy?n con tr? ??n v? trí hi?n t?i trên LCD
+                if (input[i] != '*')
+                    LCD_Print("*");   // Hi?n th? ký t? t??ng tr?ng *
+                else
+                    LCD_Print(input[i]);   // Hi?n th? ký t? th?c t?
+                delay_ms(500); // Ch?ng nhi?u
+            }
+            input[4] = '\0'; // K?t thúc chu?i
+
+            // So sánh m?t kh?u
+            if(custom_strcmp(input, password) == 0) {
+                LCD_Cmd(0x01); // Xóa màn hình
+                LCD_Cmd(0x80);
+                LCD_Print("MAT KHAU DUNG");
+                LCD_Goto(3,2);
+                LCD_Print("MO CUA!");
+                delay_ms(3000);
+            } else {
+                LCD_Cmd(0x01); // Xóa màn hình
+                LCD_Cmd(0x80);
+                LCD_Print("MAT KHAU SAI");
+                LCD_Goto(1,2);
+                LCD_Print("VUI LONG NHAP LAI!");
+                delay_ms(3000);
+                incorrectAttempts++;
+                if (incorrectAttempts >= 3) {
+                    buzzer_sound();
+                    incorrectAttempts = 0; // Reset s? l?n nh?p sai m?t kh?u
+                }
+            }
+            
+            // Quay v? màn hình l?a ch?n
+            LCD_Cmd(0x01);
+            LCD_Cmd(0x80);
+            LCD_Print("A: Nhap mat khau");
+            LCD_Cmd(0xC0);
+            LCD_Print("B: Doi mat khau");
+        } else if(Key == 'B') { // N?u nh?n nút B, ??i m?t kh?u
+            LCD_Cmd(0x01); // Xóa màn hình
+            LCD_Cmd(0x80);
+            LCD_Print("NHAP MAT KHAU CU");
+            
+            // Nh?p m?t kh?u c?
+            for(int i = 0; i < 4; i++) {
+                input[i] = GetKey();
+                LCD_Goto(i+1, 2); // Di chuy?n con tr? ??n v? trí hi?n t?i trên LCD
+                if (input[i] != '*')
+                    LCD_Print("*");   // Hi?n th? ký t? t??ng tr?ng *
+                else
+                    LCD_Print(input[i]);   // Hi?n th? ký t? th?c t?
+                delay_ms(500); // Ch?ng nhi?u
+            }
+            input[4] = '\0'; // K?t thúc chu?i
+             // So sánh m?t kh?u c?
+            if(custom_strcmp(input, password) == 0) {
+                LCD_Cmd(0x01); // Xóa màn hình
+                LCD_Cmd(0x80);
+                LCD_Print("NHAP MAT KHAU MOI");
+
+                // Nh?p m?t kh?u m?i
+                for(int i = 0; i < 4; i++) {
+                    input[i] = GetKey();
+                    LCD_Goto(i+1, 2); // Di chuy?n con tr? ??n v? trí hi?n t?i trên LCD
+                    if (input[i] != '*')
+                        LCD_Print("*");   // Hi?n th? ký t? t??ng tr?ng *
+                    else
+                        LCD_Print(input[i]);   // Hi?n th? ký t? th?c t?
+                    delay_ms(500); // Ch?ng nhi?u
+                }
+                input[4] = '\0'; // K?t thúc chu?i
+                
+                // L?u m?t kh?u m?i
+                savePassword(input);
+
+                // Hi?n th? thông báo
+                LCD_Cmd(0x01); // Xóa màn hình
+                LCD_Cmd(0x80);
+                LCD_Print("MAT KHAU DA DOI");
+                delay_ms(3000);
+            } else {
+                LCD_Cmd(0x01); // Xóa màn hình
+                LCD_Cmd(0x80);
+                LCD_Print("MAT KHAU SAI");
+                LCD_Goto(1,2);
+                LCD_Print("VUI LONG NHAP LAI!");
+                delay_ms(3000);
+                incorrectAttempts++;
+                if (incorrectAttempts >= 3) {
+                    buzzer_sound();
+                    incorrectAttempts = 0; // Reset s? l?n nh?p sai m?t kh?u
+                }
+            }
+            // Quay v? màn hình l?a ch?n
+            LCD_Cmd(0x01);
+            LCD_Cmd(0x80);
+            LCD_Print("A: Nhap mat khau");
+            LCD_Cmd(0xC0);
+            LCD_Print("B: Doi mat khau");
+        }
+
+        delay_ms(1000); // D?ng 1 giây tr??c khi ti?p t?c
+    }
+}
+
+// Hàm trì hoãn theo milliseconds
+void delay_ms(unsigned int milliseconds) {
+    for (unsigned int i = 0; i < milliseconds; i++) {
+        __delay_ms(1);
+    }
+}
+
+// Hàm so sánh chu?i tùy ch?nh
+int custom_strcmp(const char *str1, const char *str2) {
+    while (*str1 && (*str1 == *str2)) {
+        str1++;
+        str2++;
+    }
+    return *(const unsigned char *)str1 - *(const unsigned char *)str2;
+}
